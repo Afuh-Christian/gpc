@@ -1,23 +1,18 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/react';
-
-import ExploreContainer from '../components/ExploreContainer';
+import { IonContent, IonPage } from '@ionic/react';
 import './Home.css';
+
+const WEBSITE_URL = 'https://globalparcelcarrier.com';
 
 const Home: React.FC = () => {
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Blank</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent fullscreen>
-        <IonHeader collapse="condense">
-          <IonToolbar>
-            <IonTitle size="large">Blank</IonTitle>
-          </IonToolbar>
-        </IonHeader>
-        <ExploreContainer />
+      <IonContent fullscreen scrollY={false}>
+        <iframe
+          src={WEBSITE_URL}
+          title="GPC Website"
+          className="webview-frame"
+          allow="fullscreen"
+        />
       </IonContent>
     </IonPage>
   );

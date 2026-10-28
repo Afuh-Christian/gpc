@@ -18,11 +18,14 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@capacitor-community/contacts": "^8.0.0",
+    "@capacitor/android": "^8.5.3",
     "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "8.5.3",
     "@capacitor/haptics": "8.0.2",
     "@capacitor/keyboard": "8.0.6",
-    "@capacitor/status-bar": "8.0.4",
+    "@capacitor/status-bar": "^8.0.4",
     "@ionic/react": "^9.0.0",
     "@ionic/react-router": "^9.0.0",
     "ionicons": "^8.1.0",

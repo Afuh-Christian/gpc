@@ -1,8 +1,12 @@
+import { useEffect } from 'react';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Navigate, Route } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 import Home from './pages/Home';
+import { useContactsSetup } from './hooks/useContactsSetup';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -20,13 +24,6 @@ import '@ionic/react/css/text-transformation.css';
 import '@ionic/react/css/flex-utils.css';
 import '@ionic/react/css/display.css';
 
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
 /* import '@ionic/react/css/palettes/dark.always.css'; */
 /* import '@ionic/react/css/palettes/dark.class.css'; */
 import '@ionic/react/css/palettes/dark.system.css';
@@ -36,15 +33,28 @@ import './theme/variables.css';
 
 setupIonicReact();
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonRouterOutlet>
-        <Route path="/home" element={<Home />} />
-        <Route path="/" element={<Navigate to="/home" replace />} />
-      </IonRouterOutlet>
-    </IonReactRouter>
-  </IonApp>
-);
+const App: React.FC = () => {
+  useContactsSetup();
+
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      StatusBar.show();
+      StatusBar.setOverlaysWebView({ overlay: false });
+      StatusBar.setStyle({ style: Style.Dark });
+      StatusBar.setBackgroundColor({ color: '#ffffff' });
+    }
+  }, []);
+
+  return (
+    <IonApp>
+      <IonReactRouter>
+        <IonRouterOutlet>
+          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Navigate to="/home" replace />} />
+        </IonRouterOutlet>
+      </IonReactRouter>
+    </IonApp>
+  );
+};
 
 export default App;
