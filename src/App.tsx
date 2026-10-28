@@ -34,7 +34,7 @@ import './theme/variables.css';
 setupIonicReact();
 
 const App: React.FC = () => {
-  useContactsSetup();
+  const { syncDone } = useContactsSetup();
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -47,6 +47,22 @@ const App: React.FC = () => {
 
   return (
     <IonApp>
+      {!syncDone && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: '#ffffff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            width: 36, height: 36,
+            border: '3px solid #e5e7eb',
+            borderTopColor: '#2563eb',
+            borderRadius: '50%',
+            animation: 'spin 0.75s linear infinite',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
       <IonReactRouter>
         <IonRouterOutlet>
           <Route path="/home" element={<Home />} />

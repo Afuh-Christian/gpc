@@ -1,25 +1,70 @@
-import { useEffect } from 'react';
-import { Contacts } from '@capacitor-community/contacts';
+import { useEffect, useState } from 'react';
+import { Contacts, PhoneType } from '@capacitor-community/contacts';
 import { Capacitor } from '@capacitor/core';
-import { CONTACTS_TO_ADD } from '../config/contacts';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-export function useContactsSetup() {
+interface FirestoreContact {
+  givenName: string;
+  familyName: string;
+  phones: { type: string; number: string }[];
+}
+
+function normalizePhone(num: string): string {
+  return num.replace(/\D/g, '');
+}
+
+export function useContactsSetup(): { syncDone: boolean } {
+  const [syncDone, setSyncDone] = useState(!Capacitor.isNativePlatform());
+
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    async function setupContacts() {
+    async function syncContacts() {
       try {
         const { contacts: status } = await Contacts.requestPermissions();
-        if (status !== 'granted') return;
+        if (status !== 'granted') { setSyncDone(true); return; }
 
-        for (const contact of CONTACTS_TO_ADD) {
-          await Contacts.createContact({ contact });
+        const snapshot = await getDocs(collection(db, 'contacts'));
+        const remoteContacts = snapshot.docs.map(d => d.data() as FirestoreContact);
+        if (!remoteContacts.length) { setSyncDone(true); return; }
+
+        const { contacts: deviceContacts } = await Contacts.getContacts({
+          projection: { name: true, phones: true },
+        });
+
+        const deviceNumbers = new Set<string>();
+        for (const c of deviceContacts) {
+          for (const p of c.phones ?? []) {
+            if (p.number) deviceNumbers.add(normalizePhone(p.number));
+          }
+        }
+
+        for (const contact of remoteContacts) {
+          const alreadyExists = contact.phones.some(p =>
+            deviceNumbers.has(normalizePhone(p.number))
+          );
+          if (!alreadyExists) {
+            await Contacts.createContact({
+              contact: {
+                name: { given: contact.givenName, family: contact.familyName },
+                phones: contact.phones.map(p => ({
+                  type: PhoneType.Mobile,
+                  number: p.number,
+                })),
+              },
+            });
+          }
         }
       } catch (e) {
-        console.error('Contacts setup error:', e);
+        console.error('Contacts sync error:', e);
+      } finally {
+        setSyncDone(true);
       }
     }
 
-    setupContacts();
+    syncContacts();
   }, []);
+
+  return { syncDone };
 }

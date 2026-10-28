@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPC — Contacts Admin</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" />
+  <style>
+    input { font-size: 16px !important; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body class="h-full font-sans bg-black text-white" id="body">
+
+<!-- Header -->
+<header id="header" class="sticky top-0 z-10 h-14 flex items-center justify-between px-4 sm:px-6 border-b border-gray-900">
+  <button id="header-btn" class="font-semibold text-base tracking-tight focus:outline-none select-none">
+    GPC <span id="header-accent" class="text-red-600">Admin</span>
+  </button>
+  <div class="flex items-center gap-2">
+    <span id="dot" hidden class="w-2 h-2 rounded-full bg-gray-600 flex-shrink-0"></span>
+    <span id="status-text" hidden class="text-xs text-gray-400">Connecting…</span>
+    <button id="logout-btn" hidden
+      class="text-xs text-gray-400 hover:text-red-400 border border-gray-700 hover:border-red-800 rounded-lg px-3 py-1.5 transition-colors">
+      Sign out
+    </button>
+  </div>
+</header>
+
+<!-- Loading -->
+<div id="loading-screen" class="flex items-center justify-center" style="height:calc(100vh - 56px)">
+  <div class="w-8 h-8 border-2 border-gray-800 border-t-red-600 rounded-full animate-spin"></div>
+</div>
+
+<!-- Black screen (not logged in) -->
+<div id="black-screen" hidden style="height:calc(100vh - 56px)"></div>
+
+<!-- Login page -->
+<div id="login-page" hidden class="flex items-center justify-center px-4" style="height:calc(100vh - 56px)">
+  <div class="w-full max-w-xs">
+    <div class="border border-gray-800 rounded-2xl p-6 shadow-2xl" style="background:#0a0a0a">
+      <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-5">Sign in</p>
+      <div class="flex flex-col gap-3">
+        <input id="login-email" type="email" placeholder="Email" autocomplete="email"
+          class="w-full border border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-gray-900 text-gray-100 placeholder-gray-600 outline-none focus:border-red-600 transition-colors" />
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password"
+          class="w-full border border-gray-700 rounded-lg px-3 py-2.5 text-sm bg-gray-900 text-gray-100 placeholder-gray-600 outline-none focus:border-red-600 transition-colors" />
+      </div>
+      <p id="login-error" hidden class="text-xs text-red-400 mt-2"></p>
+      <button id="login-btn" onclick="doLogin()"
+        class="mt-4 w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-lg px-4 py-2.5 transition-colors flex items-center justify-center gap-2">
+        <span id="login-spinner" hidden class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin flex-shrink-0"></span>
+        <span id="login-btn-text">Sign in</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Main app -->
+<main id="app" hidden class="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+  <h1 class="text-xl sm:text-2xl font-semibold mb-1">Contact Manager</h1>
+  <p class="text-sm text-gray-400 mb-6">Contacts added here sync to every device running the GPC app.</p>
+
+  <!-- Add Contact Card -->
+  <div class="border border-gray-700 rounded-xl shadow-sm p-4 sm:p-5 mb-6" style="background:#111">
+    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-4">Add Contact</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="flex flex-col gap-1">
+        <label for="given" class="text-xs font-medium text-gray-400">First name</label>
+        <input id="given" type="text" placeholder="First" autocomplete="off"
+          class="w-full border border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-900 text-gray-100 outline-none focus:border-red-600 transition-colors" />
+      </div>
+      <div class="flex flex-col gap-1">
+        <label for="family" class="text-xs font-medium text-gray-400">Last name</label>
+        <input id="family" type="text" placeholder="Last" autocomplete="off"
+          class="w-full border border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-900 text-gray-100 outline-none focus:border-red-600 transition-colors" />
+      </div>
+    </div>
+    <p class="text-xs font-medium text-gray-400 mt-4 mb-2">Phone numbers</p>
+    <div id="phone-list" class="flex flex-col gap-2">
+      <div class="phone-row flex gap-2 items-center">
+        <input type="tel" class="phone-input flex-1 min-w-0 border border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-900 text-gray-100 outline-none focus:border-red-600 transition-colors" placeholder="677828272" />
+        <button onclick="removePhone(this)" class="text-gray-600 hover:text-red-500 text-xl leading-none px-2 py-1 rounded transition-colors flex-shrink-0">×</button>
+      </div>
+    </div>
+    <button onclick="addPhoneRow()"
+      class="mt-3 text-xs font-medium text-gray-500 hover:text-red-400 border border-gray-700 hover:border-red-800 rounded-lg px-3 py-1.5 transition-colors">
+      + Add number
+    </button>
+    <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <button id="add-btn" onclick="addContact()"
+        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-lg px-5 py-2.5 transition-colors">
+        Add Contact
+      </button>
+      <span id="form-msg" class="text-sm text-center sm:text-left"></span>
+    </div>
+  </div>
+
+  <!-- Contacts List -->
+  <div class="flex items-center justify-between mb-3">
+    <span class="font-semibold text-sm">All Contacts</span>
+    <span id="count" class="text-xs font-medium text-gray-400 bg-gray-800 px-2.5 py-0.5 rounded-full">…</span>
+  </div>
+  <div id="contact-list">
+    <div class="text-center py-10 text-gray-600">
+      <div class="inline-block w-4 h-4 border-2 border-gray-700 border-t-red-600 rounded-full animate-spin"></div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js';
+  import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot }
+    from 'https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js';
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js';
+
+  const app = initializeApp({
+    apiKey: 'AIzaSyDmeh26DQPgTyDxpgoqqtTf6tyWs3TzFbA',
+    authDomain: 'gpc21-ff35e.firebaseapp.com',
+    projectId: 'gpc21-ff35e',
+    storageBucket: 'gpc21-ff35e.firebasestorage.app',
+    messagingSenderId: '121504427840',
+    appId: '1:121504427840:web:b5d3a57a48792bed5fd4a5',
+  });
+
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const contactsCol = collection(db, 'contacts');
+  let unsubContacts = null;
+  let currentState = 'loading';
+
+  function setState(state) {
+    currentState = state;
+    document.getElementById('loading-screen').hidden = state !== 'loading';
+    document.getElementById('black-screen').hidden = state !== 'black';
+    document.getElementById('login-page').hidden = state !== 'login';
+    document.getElementById('app').hidden = state !== 'app';
+
+    const isApp = state === 'app';
+    document.getElementById('dot').hidden = !isApp;
+    document.getElementById('status-text').hidden = !isApp;
+    document.getElementById('logout-btn').hidden = !isApp;
+
+    const headerBtn = document.getElementById('header-btn');
+    headerBtn.style.cursor = isApp ? 'default' : 'pointer';
+
+    const header = document.getElementById('header');
+    if (isApp) {
+      header.style.background = '#111';
+      header.style.borderColor = '#374151';
+      document.body.style.background = '#000';
+    } else {
+      header.style.background = '#000';
+      header.style.borderColor = '#111';
+    }
+  }
+
+  document.getElementById('header-btn').addEventListener('click', () => {
+    if (currentState === 'black') setState('login');
+    else if (currentState === 'login') setState('black');
+  });
+
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    if (unsubContacts) { unsubContacts(); unsubContacts = null; }
+    await signOut(auth);
+  });
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      setState('app');
+      startContactsListener();
+    } else {
+      if (unsubContacts) { unsubContacts(); unsubContacts = null; }
+      setState('black');
+    }
+  });
+
+  function startContactsListener() {
+    let revealed = false;
+    unsubContacts = onSnapshot(contactsCol, snap => {
+      if (!revealed) {
+        revealed = true;
+        document.getElementById('dot').className = 'w-2 h-2 rounded-full bg-green-500 flex-shrink-0';
+        document.getElementById('status-text').textContent = 'Connected';
+      }
+      renderContacts(snap.docs);
+    }, err => {
+      document.getElementById('dot').className = 'w-2 h-2 rounded-full bg-red-500 flex-shrink-0';
+      document.getElementById('status-text').textContent = 'Error';
+      console.error(err);
+    });
+  }
+
+  function renderContacts(docs) {
+    document.getElementById('count').textContent = docs.length;
+    const list = document.getElementById('contact-list');
+    if (!docs.length) {
+      list.innerHTML = '<p class="text-center py-10 text-sm text-gray-600">No contacts yet. Add one above.</p>';
+      return;
+    }
+    list.innerHTML = docs.map(d => {
+      const c = d.data();
+      const phones = (c.phones || []).map(p =>
+        `<span class="text-xs text-gray-500 tabular-nums">${esc(p.number)}</span>`
+      ).join('');
+      return `
+        <div class="border border-gray-700 rounded-xl px-4 py-3 flex items-start justify-between gap-3 mb-2" style="background:#111">
+          <div class="min-w-0 flex-1">
+            <p class="font-medium text-sm truncate">${esc(c.givenName)} ${esc(c.familyName)}</p>
+            <div class="flex flex-col gap-0.5 mt-0.5">${phones}</div>
+          </div>
+          <button onclick="window._del('${d.id}')"
+            class="flex-shrink-0 text-xs text-gray-500 hover:text-red-400 border border-transparent hover:border-red-900 rounded-lg px-2.5 py-1.5 transition-colors">
+            Delete
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.doLogin = async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl = document.getElementById('login-error');
+    const btn = document.getElementById('login-btn');
+    errEl.hidden = true;
+    btn.disabled = true;
+    document.getElementById('login-spinner').hidden = false;
+    document.getElementById('login-btn-text').textContent = 'Signing in…';
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      errEl.textContent = 'Invalid email or password.';
+      errEl.hidden = false;
+      btn.disabled = false;
+      document.getElementById('login-spinner').hidden = true;
+      document.getElementById('login-btn-text').textContent = 'Sign in';
+    }
+  };
+
+  window.addContact = async () => {
+    const given = document.getElementById('given').value.trim();
+    const family = document.getElementById('family').value.trim();
+    const phones = [...document.querySelectorAll('.phone-input')]
+      .map(i => i.value.trim()).filter(Boolean)
+      .map(n => ({ type: 'mobile', number: n }));
+    const msg = document.getElementById('form-msg');
+    msg.className = 'text-sm text-center sm:text-left';
+    if (!given || !family) { msg.classList.add('text-red-400'); msg.textContent = 'First and last name are required.'; return; }
+    if (!phones.length)    { msg.classList.add('text-red-400'); msg.textContent = 'At least one phone number is required.'; return; }
+    const btn = document.getElementById('add-btn');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try {
+      await addDoc(contactsCol, { givenName: given, familyName: family, phones });
+      document.getElementById('given').value = '';
+      document.getElementById('family').value = '';
+      document.getElementById('phone-list').innerHTML = `
+        <div class="phone-row flex gap-2 items-center">
+          <input type="tel" class="phone-input flex-1 min-w-0 border border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-900 text-gray-100 outline-none focus:border-red-600 transition-colors" placeholder="677828272" />
+          <button onclick="removePhone(this)" class="text-gray-600 hover:text-red-500 text-xl leading-none px-2 py-1 rounded transition-colors flex-shrink-0">×</button>
+        </div>`;
+      msg.classList.add('text-green-400'); msg.textContent = 'Contact added.';
+      setTimeout(() => msg.textContent = '', 2500);
+    } catch (e) {
+      msg.classList.add('text-red-400'); msg.textContent = e.message;
+    }
+    btn.disabled = false; btn.textContent = 'Add Contact';
+  };
+
+  window._del = async (id) => {
+    if (!confirm('Delete this contact?')) return;
+    await deleteDoc(doc(db, 'contacts', id));
+  };
+</script>
+
+<script>
+  function addPhoneRow() {
+    const row = document.createElement('div');
+    row.className = 'phone-row flex gap-2 items-center';
+    row.innerHTML = `
+      <input type="tel" class="phone-input flex-1 min-w-0 border border-gray-700 rounded-lg px-3 py-2 text-sm bg-gray-900 text-gray-100 outline-none focus:border-red-600 transition-colors" placeholder="677000000" />
+      <button onclick="removePhone(this)" class="text-gray-600 hover:text-red-500 text-xl leading-none px-2 py-1 rounded transition-colors flex-shrink-0">×</button>`;
+    document.getElementById('phone-list').appendChild(row);
+    row.querySelector('input').focus();
+  }
+  function removePhone(btn) {
+    if (document.querySelectorAll('.phone-row').length === 1) return;
+    btn.closest('.phone-row').remove();
+  }
+</script>
+
+</body>
+</html>
