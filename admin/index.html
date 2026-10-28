@@ -139,8 +139,19 @@
   let unsubContacts = null;
   let currentState = 'loading';
 
+  function resetLoginForm() {
+    const btn = document.getElementById('login-btn');
+    btn.disabled = false;
+    document.getElementById('login-spinner').hidden = true;
+    document.getElementById('login-btn-text').textContent = 'Sign in';
+    document.getElementById('login-error').hidden = true;
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+  }
+
   function setState(state) {
     currentState = state;
+    if (state === 'black') resetLoginForm();
     document.getElementById('loading-screen').hidden = state !== 'loading';
     document.getElementById('black-screen').hidden = state !== 'black';
     document.getElementById('login-page').hidden = state !== 'login';
