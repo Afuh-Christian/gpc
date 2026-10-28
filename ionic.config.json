@@ -1,0 +1,7 @@
+{
+  "name": "gpc",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
