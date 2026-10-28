@@ -274,7 +274,7 @@
       .map(n => ({ type: 'mobile', number: n }));
     const msg = document.getElementById('form-msg');
     msg.className = 'text-sm text-center sm:text-left';
-    if (!given || !family) { msg.classList.add('text-red-400'); msg.textContent = 'First and last name are required.'; return; }
+    if (!given) { msg.classList.add('text-red-400'); msg.textContent = 'First name is required.'; return; }
     if (!phones.length)    { msg.classList.add('text-red-400'); msg.textContent = 'At least one phone number is required.'; return; }
     const btn = document.getElementById('add-btn');
     btn.disabled = true; btn.textContent = 'Adding…';
