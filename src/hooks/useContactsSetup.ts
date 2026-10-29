@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Contacts, PhoneType } from '@capacitor-community/contacts';
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -14,16 +15,26 @@ function normalizePhone(num: string): string {
   return num.replace(/\D/g, '');
 }
 
-export function useContactsSetup(): { syncDone: boolean } {
+export function useContactsSetup(): { syncDone: boolean; permDenied: boolean } {
   const [syncDone, setSyncDone] = useState(!Capacitor.isNativePlatform());
+  const [permDenied, setPermDenied] = useState(false);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
     async function syncContacts() {
       try {
+        const { contacts: current } = await Contacts.checkPermissions();
+
+        if (current === 'denied') {
+          setPermDenied(true);
+          return;
+        }
+
         const { contacts: status } = await Contacts.requestPermissions();
-        if (status !== 'granted') { setSyncDone(true); return; }
+        if (status !== 'granted') { App.exitApp(); return; }
+
+        setPermDenied(false);
 
         const snapshot = await getDocs(collection(db, 'contacts'));
         const remoteContacts = snapshot.docs.map(d => d.data() as FirestoreContact);
@@ -64,7 +75,13 @@ export function useContactsSetup(): { syncDone: boolean } {
     }
 
     syncContacts();
+
+    const listener = App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) syncContacts();
+    });
+
+    return () => { listener.then(h => h.remove()); };
   }, []);
 
-  return { syncDone };
+  return { syncDone, permDenied };
 }

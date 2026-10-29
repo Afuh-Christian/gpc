@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { App as CapApp } from '@capacitor/app';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Navigate, Route } from 'react-router-dom';
@@ -7,6 +8,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 
 import Home from './pages/Home';
 import { useContactsSetup } from './hooks/useContactsSetup';
+import { AppSettings } from './plugins/appSettings';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -34,7 +36,7 @@ import './theme/variables.css';
 setupIonicReact();
 
 const App: React.FC = () => {
-  const { syncDone } = useContactsSetup();
+  const { syncDone, permDenied } = useContactsSetup();
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -47,7 +49,46 @@ const App: React.FC = () => {
 
   return (
     <IonApp>
-      {!syncDone && (
+      {permDenied && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 10000,
+          background: '#fff',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: '32px 24px', textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📒</div>
+          <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, color: '#111' }}>
+            Contacts Permission Required
+          </h2>
+          <p style={{ margin: '0 0 32px', fontSize: 15, color: '#555', lineHeight: 1.5 }}>
+            This app needs access to your contacts to work properly. Please enable it in Settings.
+          </p>
+          <button
+            onClick={() => AppSettings.openSettings()}
+            style={{
+              width: '100%', padding: '14px', marginBottom: 12,
+              background: '#2563eb', color: '#fff',
+              border: 'none', borderRadius: 10,
+              fontSize: 16, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            Open Settings
+          </button>
+          <button
+            onClick={() => CapApp.exitApp()}
+            style={{
+              width: '100%', padding: '14px',
+              background: 'transparent', color: '#888',
+              border: '1px solid #e5e7eb', borderRadius: 10,
+              fontSize: 16, cursor: 'pointer',
+            }}
+          >
+            Close App
+          </button>
+        </div>
+      )}
+      {!syncDone && !permDenied && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           background: '#ffffff',
